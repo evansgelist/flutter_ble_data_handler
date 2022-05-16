@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_blue/flutter_blue.dart';
 
 import 'ble_device_data.dart';
 import 'ble_handling.dart';
@@ -32,65 +32,62 @@ class SearchExpansionTileState extends State<SearchExpansionTile> {
     final bleDeviceData = Provider.of<BleDeviceProvider>(context);
     final bleHandling = Provider.of<BleHandling>(context);
 
-    return Container(
-      child: Column(
-        children: <Widget>[
-          ListTile(
-            title: Text(
-              (bleDeviceData.bleDeviceData.device == null)
-                  ? "N/A"
-                  : bleDeviceData.bleDeviceData.device.name,
-              style: TextStyle(fontSize: 16),
-              maxLines: 1,
-            ),
-            trailing: SizedBox(child: _buildStateButtons(context), width: 38),
-            leading: SizedBox(
-              width: 100,
-              child: Row(
-                children: <Widget>[
-                  IconButton(
-                    icon: Icon(Icons.insert_drive_file),
-                    onPressed: () async {
-                      await bleHandling.sendFile();
-                    },
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.text_fields),
-                    onPressed: () async {
-                      // let's send 2 messages after 1 second delay
-                      Future.delayed(Duration(milliseconds: 300), () {})
+    return Column(
+      children: <Widget>[
+        ListTile(
+          title: Text(
+            (bleDeviceData.bleDeviceData.device == null)
+                ? "N/A"
+                : bleDeviceData.bleDeviceData.device.name,
+            style: TextStyle(fontSize: 16),
+            maxLines: 1,
+          ),
+          trailing: SizedBox(child: _buildStateButtons(context), width: 38),
+          leading: SizedBox(
+            width: 100,
+            child: Row(
+              children: <Widget>[
+                IconButton(
+                  icon: Icon(Icons.insert_drive_file),
+                  onPressed: () async {
+                    await bleHandling.sendFile();
+                  },
+                ),
+                IconButton(
+                  icon: Icon(Icons.text_fields),
+                  onPressed: () async {
+                    // let's send 2 messages after 1 second delay
+                    Future.delayed(Duration(milliseconds: 300), () {})
+                        .whenComplete(() {
+                      bleHandling
+                          .sendCommand("\$S\$1\$C\$onNetworkInit\$E\$")
                           .whenComplete(() {
-                        bleHandling
-                            .sendCommand("\$S\$1\$C\$onNetworkInit\$E\$")
-                            .whenComplete(() {
-                          Future.delayed(Duration(milliseconds: 300), () {})
-                              .whenComplete(() {
-                            bleHandling.sendCommand(
-                                "\$S\$1\$C\$onSerialSettings\$E\$");
-                          });
-                        });
+                        // Future.delayed(Duration(milliseconds: 300), () {})
+                        //     .whenComplete(() {
+                        //   bleHandling
+                        //       .sendCommand("\$S\$1\$C\$onSerialSettings\$E\$");
+                        // });
                       });
-
-                      // await bleHandling.sendCommand(null);
-                    },
-                  ),
-                ],
-              ),
+                    });
+                    // await bleHandling.sendCommand(null);
+                  },
+                ),
+              ],
             ),
           ),
-          StreamBuilder<bool>(
-              stream: FlutterBlue.instance.isScanning,
-              initialData: false,
-              builder: (c, snapshot) {
-                if (snapshot.data) {
-                  return LinearProgressIndicator();
-                } else {
-                  return Container();
-                }
-              }),
-          _buildScanResult(context),
-        ],
-      ),
+        ),
+        StreamBuilder<bool>(
+            stream: FlutterBluePlus.instance.isScanning,
+            initialData: false,
+            builder: (c, snapshot) {
+              if (snapshot.data) {
+                return LinearProgressIndicator();
+              } else {
+                return Container();
+              }
+            }),
+        Expanded(child: _buildScanResult(context)),
+      ],
     );
   }
 
@@ -119,7 +116,7 @@ class SearchExpansionTileState extends State<SearchExpansionTile> {
   // builds the search button, based on the Stream condition of the scanning state.
   Widget _buildSearchButton(BuildContext context) {
     return StreamBuilder<bool>(
-        stream: FlutterBlue.instance.isScanning,
+        stream: FlutterBluePlus.instance.isScanning,
         initialData: false,
         builder: (c, snapshot) {
           if (snapshot.data) {
@@ -127,7 +124,7 @@ class SearchExpansionTileState extends State<SearchExpansionTile> {
               child: Icon(Icons.stop),
               mini: true,
               onPressed: () {
-                FlutterBlue.instance.stopScan();
+                FlutterBluePlus.instance.stopScan();
               },
               backgroundColor: Colors.red,
             );
@@ -140,7 +137,8 @@ class SearchExpansionTileState extends State<SearchExpansionTile> {
                     widget.onSearchPressed(context);
                     _showResults = true;
                   });
-                  FlutterBlue.instance.startScan(timeout: Duration(seconds: 4));
+                  FlutterBluePlus.instance
+                      .startScan(timeout: Duration(seconds: 4));
                   // expand the expansion tile instantly, without waiting for finish
                   //expansionTile.currentState.expand();
                 });
@@ -176,7 +174,7 @@ class SearchExpansionTileState extends State<SearchExpansionTile> {
                 setState(() {
                   _showConnecting = true;
                 });
-                FlutterBlue.instance.stopScan();
+                FlutterBluePlus.instance.stopScan();
                 device.connect().whenComplete(() {
                   bleDeviceData.registerNewBleDevice(bleDevice: device);
                   bleHandling.registerUARTServices(device);
@@ -198,22 +196,23 @@ class SearchExpansionTileState extends State<SearchExpansionTile> {
   // build the scan result list
   Widget _buildScanResult(BuildContext context) {
     final bleDeviceData = Provider.of<BleDeviceProvider>(context);
-
     if (bleDeviceData.bleDeviceData.device != null) {
       return Container();
     } else {
       // Only show scan results, when the Results, should be show (valid! - lack of FlutterBlue)
       if (_showResults) {
-        return StreamBuilder<List<ScanResult>>(
-          stream: FlutterBlue.instance.scanResults,
-          initialData: [],
-          builder: (c, snapshot) => Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: snapshot.data
-                .map(
-                  (r) => _buildResultElement(context, r),
-                )
-                .toList(),
+        return SingleChildScrollView(
+          child: StreamBuilder<List<ScanResult>>(
+            stream: FlutterBluePlus.instance.scanResults,
+            initialData: [],
+            builder: (c, snapshot) => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: snapshot.data
+                  .map(
+                    (r) => _buildResultElement(context, r),
+                  )
+                  .toList(),
+            ),
           ),
         );
       } else {
@@ -224,32 +223,52 @@ class SearchExpansionTileState extends State<SearchExpansionTile> {
 
   // result list elements
   Widget _buildResultElement(BuildContext context, ScanResult r) {
-    if (r.advertisementData.localName == searchForMatchingName) {
-      return Container(
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(
-              color: Colors.grey[100],
-              width: 1,
-            ),
+    //if (r.advertisementData.localName == searchForMatchingName) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: Colors.grey[100],
+            width: 1,
           ),
         ),
-        child: ListTile(
-          title: Text(
-            r.advertisementData.localName.toString(),
-          ),
-          trailing: SizedBox(
-              child: _buildConnectionButton(context, r.device), width: 32),
-          leading: GestureDetector(
-            child: Icon(Icons.add),
-            onTap: () {
-              print("add Dongle dialog");
-            },
-          ),
+      ),
+      child: ListTile(
+        title: Text(_formattedTitle(r)),
+        trailing: SizedBox(
+            child: _buildConnectionButton(context, r.device), width: 32),
+        leading: GestureDetector(
+          child: Icon(Icons.add),
+          onTap: () {
+            print("add Dongle dialog");
+          },
         ),
-      );
-    } else {
-      return Container();
+      ),
+    );
+    //} else {
+    //  return Container();
+    //}
+  }
+
+  String _formattedTitle(ScanResult r) {
+    final buffer = StringBuffer();
+    if (r.advertisementData.serviceUuids.isNotEmpty) {
+      buffer
+        ..write('ads service uuids: ')
+        ..write(r.advertisementData.serviceUuids.toString());
     }
+    if (r.device.name.isNotEmpty) {
+      buffer
+        ..write(buffer.length > 0 ? '\n' : '')
+        ..write('name: ')
+        ..write(r.device.name);
+    }
+    if (r.device.id.toString().isNotEmpty) {
+      buffer
+        ..write(buffer.length > 0 ? '\n' : '')
+        ..write('id: ')
+        ..write(r.device.id);
+    }
+    return buffer.toString();
   }
 }

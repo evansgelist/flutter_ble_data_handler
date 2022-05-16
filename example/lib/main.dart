@@ -1,12 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-
-import 'package:flutter_blue/flutter_blue.dart';
 import 'package:flutter_ble_data_handler/handler.dart';
-
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import 'ble_device_data.dart';
 import 'ble_handling.dart';
@@ -24,9 +21,9 @@ class FlutterBlueApp extends StatefulWidget {
 class _FlutterBlueAppState extends State<FlutterBlueApp> {
   @override
   Widget build(BuildContext context) {
-    permissions();
+    //permissions();
 
-    FlutterBlue.instance.setLogLevel(LogLevel.error);
+    FlutterBluePlus.instance.setLogLevel(LogLevel.error);
 
     return MultiProvider(
       providers: [
@@ -34,7 +31,7 @@ class _FlutterBlueAppState extends State<FlutterBlueApp> {
           value: BleDeviceProvider(),
         ),
         Provider<BleHandling>(
-          builder: (context) => BleHandling(),
+          create: (context) => BleHandling(),
         ),
       ],
       child: MaterialApp(
@@ -46,13 +43,18 @@ class _FlutterBlueAppState extends State<FlutterBlueApp> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  Container(
+                  Flexible(
+                    flex: 3,
                     child: SearchExpansionTile(
                       onSearchPressed: onSearchPressed,
                     ),
                   ),
-                  Center(
-                    child: ShowData(),
+                  Divider(),
+                  Flexible(
+                    flex: 1,
+                    child: Center(
+                      child: ShowData(),
+                    ),
                   )
                 ],
               ),
@@ -67,19 +69,19 @@ class _FlutterBlueAppState extends State<FlutterBlueApp> {
     print("Just a callback function for search press handling");
   }
 
-  void permissions() async {
-    PermissionStatus permission = await PermissionHandler()
-        .checkPermissionStatus(PermissionGroup.storage);
-    if (permission != PermissionStatus.granted) {
-      print("Storage permission is not granted.");
-      Map<PermissionGroup, PermissionStatus> permissionsMap =
-          await PermissionHandler()
-              .requestPermissions([PermissionGroup.storage]);
-      if (permissionsMap[PermissionGroup.storage] != PermissionStatus.granted) {
-        print("Unable to grant permission: ${PermissionGroup.storage}");
-      }
-    }
-  }
+// void permissions() async {
+//   PermissionStatus permission = await PermissionHandler()
+//       .checkPermissionStatus(PermissionGroup.storage);
+//   if (permission != PermissionStatus.granted) {
+//     print("Storage permission is not granted.");
+//     Map<PermissionGroup, PermissionStatus> permissionsMap =
+//         await PermissionHandler()
+//             .requestPermissions([PermissionGroup.storage]);
+//     if (permissionsMap[PermissionGroup.storage] != PermissionStatus.granted) {
+//       print("Unable to grant permission: ${PermissionGroup.storage}");
+//     }
+//   }
+// }
 }
 
 class ShowData extends StatefulWidget {
@@ -141,7 +143,6 @@ class _ShowDataState extends State<ShowData> {
               builder: (c, snapshot) {
                 if (snapshot.hasData) {
                   return Text("${snapshot.data}");
-                   
                 } else {
                   return Container();
                 }
