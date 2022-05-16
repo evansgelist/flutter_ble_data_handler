@@ -6,7 +6,7 @@ import CoreBluetooth
 @objc class AppDelegate: FlutterAppDelegate, CBPeripheralManagerDelegate {
     
     private var peripheralManager : CBPeripheralManager!
-    private var isPeripheral = true
+    private var isPeripheral = true //mode
     
     override func application(
         _ application: UIApplication,
