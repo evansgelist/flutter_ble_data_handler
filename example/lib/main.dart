@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_ble_data_handler/handler.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:flutter_blue/flutter_blue.dart';
 import 'package:provider/provider.dart';
 
 import 'ble_device_data.dart';
@@ -23,7 +23,7 @@ class _FlutterBlueAppState extends State<FlutterBlueApp> {
   Widget build(BuildContext context) {
     //permissions();
 
-    FlutterBluePlus.instance.setLogLevel(LogLevel.error);
+    FlutterBlue.instance.setLogLevel(LogLevel.error);
 
     return MultiProvider(
       providers: [

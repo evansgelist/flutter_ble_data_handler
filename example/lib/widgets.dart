@@ -1,5 +1,6 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:flutter_blue/flutter_blue.dart';
 import 'package:provider/provider.dart';
 
 import 'ble_device_data.dart';
@@ -50,7 +51,11 @@ class SearchExpansionTileState extends State<SearchExpansionTile> {
                 IconButton(
                   icon: Icon(Icons.insert_drive_file),
                   onPressed: () async {
-                    await bleHandling.sendFile();
+                    FilePickerResult result =
+                        await FilePicker.platform.pickFiles();
+                    if (result != null) {
+                      await bleHandling.sendFile(result.files.single.path);
+                    }
                   },
                 ),
                 IconButton(
@@ -77,7 +82,7 @@ class SearchExpansionTileState extends State<SearchExpansionTile> {
           ),
         ),
         StreamBuilder<bool>(
-            stream: FlutterBluePlus.instance.isScanning,
+            stream: FlutterBlue.instance.isScanning,
             initialData: false,
             builder: (c, snapshot) {
               if (snapshot.data) {
@@ -116,7 +121,7 @@ class SearchExpansionTileState extends State<SearchExpansionTile> {
   // builds the search button, based on the Stream condition of the scanning state.
   Widget _buildSearchButton(BuildContext context) {
     return StreamBuilder<bool>(
-        stream: FlutterBluePlus.instance.isScanning,
+        stream: FlutterBlue.instance.isScanning,
         initialData: false,
         builder: (c, snapshot) {
           if (snapshot.data) {
@@ -124,7 +129,7 @@ class SearchExpansionTileState extends State<SearchExpansionTile> {
               child: Icon(Icons.stop),
               mini: true,
               onPressed: () {
-                FlutterBluePlus.instance.stopScan();
+                FlutterBlue.instance.stopScan();
               },
               backgroundColor: Colors.red,
             );
@@ -137,7 +142,7 @@ class SearchExpansionTileState extends State<SearchExpansionTile> {
                     widget.onSearchPressed(context);
                     _showResults = true;
                   });
-                  FlutterBluePlus.instance
+                  FlutterBlue.instance
                       .startScan(timeout: Duration(seconds: 4));
                   // expand the expansion tile instantly, without waiting for finish
                   //expansionTile.currentState.expand();
@@ -174,7 +179,7 @@ class SearchExpansionTileState extends State<SearchExpansionTile> {
                 setState(() {
                   _showConnecting = true;
                 });
-                FlutterBluePlus.instance.stopScan();
+                FlutterBlue.instance.stopScan();
                 device.connect().whenComplete(() {
                   bleDeviceData.registerNewBleDevice(bleDevice: device);
                   bleHandling.registerUARTServices(device);
@@ -203,7 +208,7 @@ class SearchExpansionTileState extends State<SearchExpansionTile> {
       if (_showResults) {
         return SingleChildScrollView(
           child: StreamBuilder<List<ScanResult>>(
-            stream: FlutterBluePlus.instance.scanResults,
+            stream: FlutterBlue.instance.scanResults,
             initialData: [],
             builder: (c, snapshot) => Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,

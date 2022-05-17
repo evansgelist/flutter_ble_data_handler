@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:flutter_blue/flutter_blue.dart';
 import 'package:rxdart/rxdart.dart';
 
 import 'package:flutter_ble_data_handler/handler.dart';
@@ -61,9 +61,9 @@ class BleHandling {
     _dataIsReady.add(false);
   }
 
-  Future<void> sendFile() async {
+  Future<void> sendFile(String path) async {
     await DataSender.instance
-        .sendFile(_txCharacteristic, null, // null will be path here
+        .sendFile(_txCharacteristic, path, // null will be path here
             sendingCallback: UpdateHandler.instance.sendingCallback,
             chunkCountCallback: UpdateHandler.instance.chunkCountCallback,
             totalCountCallback: UpdateHandler.instance.totalCountCallback);

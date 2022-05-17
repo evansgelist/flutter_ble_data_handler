@@ -62,6 +62,7 @@ import CoreBluetooth
         if let value = requests.first?.value {
             print(value.hexEncodedString())
         }
+        peripheral.respond(to: requests.first!, withResult: .success)
         print("=============== end")
         
     }
